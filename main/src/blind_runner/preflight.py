@@ -15,7 +15,10 @@ def denied(label, fn):
     try:
         fn()
     except OSError as e:
-        assert e.errno in (errno.EACCES, errno.EPERM, errno.ENOENT, errno.EROFS), (label, str(e))
+        # EBUSY, EXDEV: Linux bubblewrap protects files with read-only bind mounts, which cannot be
+        # unlinked (EBUSY) or renamed/linked across (EXDEV, each mount is its own filesystem).
+        assert e.errno in (errno.EACCES, errno.EPERM, errno.ENOENT, errno.EROFS, errno.EBUSY, errno.EXDEV), \
+            (label, str(e))
         checks.append(label)
     else:
         raise AssertionError('Isolation failure: ' + label)

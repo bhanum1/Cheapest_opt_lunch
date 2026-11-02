@@ -225,8 +225,13 @@ On an evaluator error, stop and report; do not retry an unknown evaluation.
     (workspace / 'PUBLIC_EVALUATOR.md').write_text(public)
     (private / 'canary.txt').write_text('Private evaluator data: access must fail.')
     (root / 'sibling_canary.txt').write_text('Another campaign: access must fail.')
-    roots = sorted({runtime['prefix'], runtime['base_prefix'],
-                    str(Path(runtime['prefix']).resolve()), str(Path(runtime['base_prefix']).resolve())})
+    roots = {runtime['prefix'], runtime['base_prefix'],
+             str(Path(runtime['prefix']).resolve()), str(Path(runtime['base_prefix']).resolve())}
+    if sys.platform.startswith('linux'):
+        # Codex's Linux sandbox re-executes the codex binary inside bubblewrap, so its
+        # package (bin/, codex-resources/, codex-path/; no credentials) must be readable.
+        roots.add(str(Path(args.codex).resolve().parents[1]))
+    roots = sorted(roots)
     policy = {'codex': str(args.codex), 'python': str(args.agent_python),
               'workspace': str(workspace), 'permissions': permissions(workspace, roots)}
     write_json(private / 'execution.json', policy)
