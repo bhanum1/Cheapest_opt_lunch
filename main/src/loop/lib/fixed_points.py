@@ -18,4 +18,4 @@ class Optimizer(Base):
         if not self.queue:
             return None
         p = self.queue.pop(0)
-        return self.cands[p] if self.indexed else self.to_unit(np.asarray(p, dtype=float))
+        return int(p) if self.indexed else self.to_unit(np.asarray(p, dtype=float))

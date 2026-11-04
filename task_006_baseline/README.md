@@ -53,16 +53,15 @@ git-ignored, so results stay local unless you commit them.
    ```
 
 4. Agent run. Check isolation first (zero evaluations, no model call), then
-   run. Codex is the default agent; add `--agent claude` for Claude Code.
+   run. Claude Code is the default agent; add `--agent codex` for Codex.
 
    ```bash
-   .venv/bin/python main/scripts/run_agent.py --task opv_pool --budget 100 --check-only
-   .venv/bin/python main/scripts/run_agent.py --task opv_pool --budget 100
+   .venv/bin/python main/scripts/run_loop.py --task opv_pool --budget 100 --check-only
+   .venv/bin/python main/scripts/run_loop.py --task opv_pool --budget 100
    ```
 
-   The agent is told only the dimension, the [0, 1] box, the direction, the
-   budget and that the objective is not repeatable. It never sees the pool,
-   the devices or `pool_random.py`.
+   The agent is told only the dimension, the [0, 1] box, the budget and that
+   the objective is not repeatable. It never sees the pool or the devices.
 
 5. Plots, with the run ID the runner printed (against the committed
    baselines; use `--results runs/baselines-100` for your own rerun):
@@ -70,7 +69,7 @@ git-ignored, so results stay local unless you commit them.
    ```bash
    .agent-venv/bin/python main/scripts/make_comparison_plots.py \
      --results main/results_full --task opv_pool_pce_d11 \
-     --agent-run runs/run-<id>/workspace/results/agent_run \
+     --agent-run runs/run-<id>/results \
      --outdir runs/run-<id>/figures
    ```
 
@@ -78,4 +77,4 @@ git-ignored, so results stay local unless you commit them.
    once the best device is found, drawn at the bottom of the log axis (1e-12).
 
 Budgets above 526 are refused by `run_campaign.py`, `run_sweep.py` and
-`run_agent.py`.
+`run_loop.py`.

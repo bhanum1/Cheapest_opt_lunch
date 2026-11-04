@@ -47,7 +47,7 @@ class Optimizer(Base):
                 return None
             with torch.no_grad():
                 scores = acq(torch.tensor(self.cands[free]).unsqueeze(1))
-            return self.cands[free[int(scores.argmax())]]
+            return free[int(scores.argmax())]
         torch.manual_seed(self.seed + self.calls)
         bounds = torch.stack([torch.zeros(self.dim), torch.ones(self.dim)])
         x, _ = optimize_acqf(acq, bounds, q=1, num_restarts=self.num_restarts, raw_samples=self.raw_samples)

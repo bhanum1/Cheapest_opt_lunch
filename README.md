@@ -1,13 +1,20 @@
 # Agentoptimizer
 
 An LLM chooses optimization methods, hyperparameters, and evaluation block lengths
-for a black-box problem. It plans **one block at a time**, inspects its observations,
-and decides again. The total evaluation budget is enforced by a separate evaluator.
+for a black-box problem, one block at a time. A Python loop drives it:
 
-[AGENTS.md](AGENTS.md) is the canonical agent prompt used for the iterative Astra
-experiments. [CLAUDE.md](CLAUDE.md) imports it; there is only one maintained prompt.
-The automated isolated runner below drives either Codex CLI or Claude Code CLI
-(`--agent codex|claude`); both use Codex's native sandbox for every agent command.
+1. Call the agent once, fresh, with [SKILL.md](main/src/loop/SKILL.md) as its prompt.
+   It analyzes the data so far and writes a proposal: an optimizer (from the
+   [library](main/src/loop/lib/README.md) or its own), its settings, and how many
+   points to evaluate.
+2. Validate the proposal and append the agent's decision to `decisions.md`.
+3. Run that optimizer in a sandbox for exactly that many points. The runner
+   evaluates every point itself and appends it to `data.csv`.
+4. Repeat until the budget is spent or the agent stops.
+
+The agent never touches the objective. Optimizer state is saved to disk between
+blocks. The runner drives either Codex CLI or Claude Code CLI (`--agent codex|claude`);
+both use Codex's native sandbox for every agent command and optimizer.
 
 [Published Astra max results: 30 mathematical tasks, 2,000-evaluation allowance](main/agent_runs/astra_max_2000_20261022/README.md).
 
@@ -24,9 +31,8 @@ The automated isolated runner below drives either Codex CLI or Claude Code CLI
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), only for
   `--agent claude`; sign in with `claude auth login`.
 
-The native runner has been checked on macOS with Codex CLI
-`0.162.0-alpha.17.2` and `0.163.0`; `--agent claude` with Claude Code CLI `2.1.308`
-(sandboxed by Codex `0.163.0`). It fails before inference if its isolation checks fail.
+The loop has been checked on macOS with Codex CLI `0.163.0` as the sandbox and
+`--agent claude`. It fails before inference if its isolation checks fail.
 Other CLI versions must support the named permission profiles used by the runner.
 
 ## Install once
@@ -96,127 +102,88 @@ These three checks spend **no model calls**. Run them after installing:
 3. Agent setup and isolation preflight, **zero objective evaluations**:
 
    ```bash
-   .venv/bin/python main/scripts/run_agent.py --task step_ellipsoid10 --budget 100 --check-only
+   .venv/bin/python main/scripts/run_loop.py --task step_ellipsoid10 --budget 100 --check-only
    ```
 
-   It should end with `Isolation passed: … checks, 0/100 evaluations.`
+   It should end with `Isolation passed: … checks.`
+
+The library tests (`test_loop_lib.py`) take about three minutes.
 
 ## Run the agent
 
-Start a fresh campaign:
-
 ```bash
-.venv/bin/python main/scripts/run_agent.py \
-  --task step_ellipsoid10 --budget 100 \
-  --model gpt-6-astra --effort max
+.venv/bin/python main/scripts/run_loop.py --task step_ellipsoid10 --budget 100
 ```
 
-The defaults are `gpt-6-astra` and `max`, so both flags can be omitted.
-Use `--effort xhigh` to retain the reasoning setting used in earlier experiments.
+The defaults are `--agent claude --model claude-opus-5-5 --effort high`. For Codex,
+pass `--agent codex` (default model `gpt-6-astra`). `--call-timeout` limits each
+agent call (default 3600 s).
 
-`--seed` is supplied to the agent for its stochastic designs and optimizers and
-also seeds private observation noise where supported. Separate invocations with
-`--seed 0`, `--seed 1`, and `--seed 2` create three independent campaigns.
+`--seed` is given to the agent for its optimizers' randomness, and also seeds
+private observation noise where supported. Separate invocations with `--seed 0`,
+`--seed 1` and `--seed 2` create three independent campaigns.
 
-`--budget` is the number of **objective evaluations**, not model tokens or optimizer
-iterations. It is supplied in the public task input and enforced privately.
-Initialization, repeated points, finite differences and line searches all count.
-The agent chooses the next block's method, settings and length; continuations also
-require a new decision. It can preserve a live optimizer process between blocks.
+`--budget` is the number of **objective evaluations**. Initialization, repeated
+points, finite differences and line searches all count. Every invocation creates a
+new opaque `runs/run-<id>/`; there is no resume option. Runs may be launched in
+parallel. `--runs-dir`, `--agent-python`, `--codex` and `--claude` override local paths.
 
-To run Claude instead, add `--agent claude` (default model `claude-opus-5-5`,
-same `max` default effort; `--claude` overrides the CLI path). Claude Code runs headless
-with no built-in tools, settings, memory, CLAUDE.md, skills or claude.ai connectors:
-its only tools are the same sandboxed `run_command`/`write_stdin` MCP executor.
-
-```bash
-.venv/bin/python main/scripts/run_agent.py \
-  --task step_ellipsoid10 --budget 100 --agent claude
-```
-
-For the other two recent experiments, use `--task sharp_ridge10` or
-`--task weierstrass10`. Every invocation creates a new opaque `runs/run-<id>/`;
-there is no resume/reset option. Runs may be launched from separate terminals in
-parallel. `--runs-dir`, `--agent-python` and `--codex` override local paths.
-
-The native runner accepts every task in [the task registry](main/src/tasks/registry.py).
-The agent sees the same box as the baselines: discrete, categorical and conditional
-structure stays hidden inside the objective. Constrained tasks return `(y, g)`,
-feasible iff every `g <= 0`. Noisy tasks set `noisy` and are reseeded with `--seed`
-(default 0); the agent sees only observations, and the private journal keeps the
-noise-free values. See [TASKS.md](main/TASKS.md) and [ADDING_TASKS.md](main/ADDING_TASKS.md).
+The runner accepts every task in [the task registry](main/src/tasks/registry.py).
+The agent sees the same box as the baselines. Constrained tasks add `g0..` columns,
+feasible iff every `g <= 0`. Noisy tasks are reseeded with `--seed`; the agent sees
+only observations, and the private journal keeps the noise-free values. See
+[TASKS.md](main/TASKS.md) and [ADDING_TASKS.md](main/ADDING_TASKS.md).
 
 ## What the agent can access
 
-```text
-Fresh Codex CLI context + canonical prompt + public task description
-    -> native OS sandbox: optimizer libraries and this run's workspace
-    -> public harness.evaluate(x): request file containing x
-    -> separate trusted evaluator: objective, durable budget and journal
-    -> numeric response returned to the agent
-```
+Each call is a fresh CLI with no built-in tools, settings, memory, skills or
+connectors. Its one tool, `run_command`, runs a command under Codex's native
+sandbox, which denies everything by default:
 
-No VM is required. A fresh conversation or a different working directory alone
-is insufficient: the runner applies explicit deny-by-default filesystem rules.
-Agent commands can read their public workspace and optimizer runtime, and write
-scripts in `work/`, temporary files, requests and decision logs. They cannot read
-the repository, objective implementation, private evaluator state, previous runs,
-or siblings. Network access, browser/app tools, memories, personal configuration,
-and permission escalation are disabled for the campaign. The only execution tools
-are the trusted `workspace.run_command` and `workspace.write_stdin` MCP tools,
-which enforce the native sandbox on every command.
+- **Readable:** the run's workspace (problem statement, `space.json`, `data.csv`,
+  `decisions.md`, the library, earlier block scripts and state) and the
+  optimizer-only Python runtime.
+- **Writable:** `work/` (scripts and custom optimizers), `agent/` (its proposal,
+  decision and notes) and a temporary directory.
+- **Denied:** the repository, the objective, `private/`, other runs, the system
+  temporary directory, and the network.
 
-The CLI retains the credentials needed for model inference; those credentials
-are not exposed to agent commands. The agent sees bounds, dimension, direction,
-noise status, budget, and its own observations. It does not receive task identity,
-optimum, baseline results or this README.
+Optimizers run under a second policy that may write only `state/`. The agent's
+runtime (`.agent-venv`) must not contain objective backends; the runner refuses
+one that does. The agent does not receive task identity, the optimum, baseline
+results or this README.
 
-For an explicitly public candidate pool such as `--task mof_pool`, the agent also
-gets an anonymous, feature-only `candidates.npy`. It selects exact unused rows
-through `h.evaluate_index(index)`. Labels, material IDs, and global ranks remain
-private. This differs from `opv_pool`, whose hidden nearest-untested mapping is
-preserved. See [MOF task details](main/data/mof_pool/README.md).
+For an indexed pool such as `--task mof_pool`, `space.json` holds the anonymous,
+feature-only candidates and optimizers propose row indices; labels, IDs and ranks
+stay private. `opv_pool` keeps its hidden nearest-untested mapping and its
+candidates private. See [MOF task details](main/data/mof_pool/README.md).
 
-Preflight attempts forbidden reads/writes, a symlink escape, network access and
-process inspection on macOS. Checks are recorded before the first evaluation.
-These are tested isolation controls, not a formal guarantee against OS or tool
-vulnerabilities. Never run the optimization agent directly in the repository.
+Preflight checks both policies before any model call: forbidden reads and writes,
+a symlink escape, network access, and missing objective backends. These are tested
+isolation controls, not a formal guarantee against OS or tool vulnerabilities.
 
-## Outputs and supervision
-
-The launcher prints the run directory immediately. While it runs, inspect its
-private CLI event log from your supervisor terminal; do not send benchmark hints
-back to the agent.
+## Outputs
 
 ```text
 runs/run-<id>/
-  workspace/
-    AGENTS.md                       generated copy of the canonical prompt
-    PUBLIC_EVALUATOR.md              public problem and actual budget
-    src/agent_harness/harness.py     transport client, no objective implementation
-    work/                           agent-written scripts
-    results/agent_run/
-      roadmap_initial.md            FIRST BLOCK ONLY; immutable after recording
-      changelog.md                  every subsequent decision, including continuations
-      trace.csv                     actual observations, written by evaluator
-      meta.json                     public run state, written by evaluator
+  results/
+    trace.csv           every evaluation, in the baseline format (noise-free y_best_so_far)
+    meta.json           task, budget, outcome, agent, audit
+    decisions.md        every decision and runner note
+  workspace/            what the agent saw: data.csv, decisions.md, blocks/, state/, work/, agent/
   private/
-    manifest.json                   source/prompt hashes, model and package versions
-    isolation_checks.json           preflight results
-    evaluations.sqlite              authoritative evaluations and decision snapshots
-    cli_events.jsonl                CLI tool calls and messages (Codex or Claude stream-json)
-    agent_final.txt                 final agent response
-    integrity_audit.json            journal/artifact consistency checks
-    scoring.json                   task identity and optimum, for offline analysis
-    scored_trace.csv               y_best_so_far in the baseline convention (noise-free, feasible)
+    journal.csv         evaluations including noise-free values and timing
+    blocks.json         each accepted proposal and how its block ended
+    calls/NNN/          each agent call's prompt, event log, proposal, decision, context.md
+    blocks/NNN.log      each optimizer's stderr
+    audit.json          the post-run checks
+    manifest.json, policy.json, isolation_checks.json
 ```
 
-The historical filename `roadmap_initial.md` remains for compatibility; it is not
-a full campaign roadmap. The evaluator snapshots decisions before evaluations,
-rejects edits to the initial record and requires an append-only changelog.
-Reconstructing the client does not reset the evaluation counter. On a crash or an
-unknown evaluation outcome, preserve the run directory and inspect the private
-journal; do not retry that campaign as though it had zero evaluations.
+After the loop, an audit checks that the run stayed within budget, `data.csv`
+matches the private journal, `decisions.md` is exactly what the runner wrote, each
+block follows its decision and stays within its length, and only the sandboxed
+tool was used. A failed audit stops before `results/` is written.
 
 ## Baselines
 
@@ -267,7 +234,7 @@ printed run ID:
 ```bash
 .agent-venv/bin/python main/scripts/make_comparison_plots.py \
   --results runs/baselines-100 --task step_ellipsoid_d10_i1 \
-  --agent-run runs/run-<id>/workspace/results/agent_run \
+  --agent-run runs/run-<id>/results \
   --outdir runs/run-<id>/figures
 ```
 
@@ -306,23 +273,17 @@ Figures that leave the repo follow [FIGURES.md](main/FIGURES.md). Their scripts
 
 ## Repository layout
 
-- `AGENTS.md`, `CLAUDE.md`: one canonical agent and its Claude import.
+- `main/src/loop/`: the agent loop: runner, sandbox, optimizer host, `SKILL.md`, audit.
+- `main/src/loop/lib/`: the agent's optimizer library.
 - `main/src/tasks/`: private objective implementations and registry.
-- `main/src/optimizers/`: shared optimizer wrappers.
-- `main/src/agent_harness/harness.py`: public evaluation client.
-- `main/src/blind_runner/`: native execution, private evaluator and orchestration.
-- `main/scripts/`: agent runner, baseline runner and plotting entry points.
-- `main/tests/`: integrity tests for the evaluator and pool tasks.
+- `main/src/optimizers/`: the baselines' optimizer wrappers.
+- `main/scripts/`: agent runner (`run_loop.py`), baseline runner and plotting entry points.
+- `main/tests/`: tests for the loop, its library and the pool tasks.
 - `main/results_full/`: committed baseline traces and figures.
 - `main/agent_runs/`: published agent campaigns and comparison reports.
 - `task_005_baseline/`, `task_006_baseline/`, `poly_results/`: polymer data/model utilities and existing figures.
 - `external/`: ignored third-party data (YAHPO surrogates, user-supplied evaluators).
 - `runs/`: ignored generated workspaces, logs and new results.
 
-The numbered local harnesses, copied sandbox implementations and old planning
-briefs have been retired. A new supported task reuses the same public client.
-
-Use `run_agent.py` for new isolated agent campaigns on supported tasks.
-
-The integrity tests use fake objectives to check budget exhaustion, duplicate
-request handling, crash recovery, configuration immutability and prospective logs.
+Published agent runs under `main/agent_runs/` were produced by the earlier
+single-session runner, which has been retired.

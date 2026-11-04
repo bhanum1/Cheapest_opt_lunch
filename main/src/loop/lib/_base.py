@@ -2,13 +2,14 @@
 
 A subclass works in the unit cube and implements:
 
-    propose() -> unit point (np.ndarray) or None when it has finished
+    propose() -> unit point (np.ndarray), a candidate index (int) on an indexed
+                 pool, or None when it has finished
     observe(u, value)   a value for a point it proposed
     absorb(u, value)    a value for a point it did not propose (warm start);
                         default: recorded in self.U / self.y only
 
 The base handles bounds, indexed pools (a proposed point becomes the nearest
-unused candidate), constraint merit, records, and pickle save/load.
+unused candidate; a proposed index is used as is), constraint merit, records, and pickle save/load.
 """
 import pickle
 import warnings
@@ -56,6 +57,10 @@ class Base:
             u = self.propose()
             if u is None:
                 break
+            if self.indexed and isinstance(u, (int, np.integer)):  # an exact candidate index
+                self.pending[int(u)] = self.cands[int(u)]
+                out.append(int(u))
+                continue
             u = np.clip(np.asarray(u, dtype=float), 0, 1)
             if self.indexed:
                 free = np.array([i for i in range(len(self.cands)) if i not in self.used and i not in self.pending])

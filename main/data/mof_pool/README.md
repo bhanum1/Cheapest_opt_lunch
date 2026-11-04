@@ -22,13 +22,12 @@ IDs may be added to trusted post-run reports, never to agent feedback.
 Run from the repository root after the environment setup in the root README:
 
 ```bash
-.venv/bin/python main/scripts/run_agent.py --task mof_pool --budget 100 --check-only
-.venv/bin/python main/scripts/run_agent.py --task mof_pool --budget 100 --seed 0 \
-  --model gpt-6-astra --effort max
+.venv/bin/python main/scripts/run_loop.py --task mof_pool --budget 100 --check-only
+.venv/bin/python main/scripts/run_loop.py --task mof_pool --budget 100 --seed 0
 ```
 
-Use seeds 0, 1, and 2 for the requested three independent campaigns. The current
-root `AGENTS.md` governs each campaign: the agent selects its own initialization,
+Use seeds 0, 1, and 2 for the requested three independent campaigns.
+`main/src/loop/SKILL.md` governs each campaign: the agent selects its own initialization,
 method, hyperparameters, and evaluation block length. The archive's old prompt,
 fixed ten-point initialization, GPBO/TuRBO restriction, and 110-call brief are
 not used for these agent runs. The confirmed total budget is 100, including all

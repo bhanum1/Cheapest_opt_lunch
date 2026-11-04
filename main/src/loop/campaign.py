@@ -244,8 +244,8 @@ def problem(task, budget: int, seed: int) -> str:
                      "in data.csv: a point is feasible iff every g <= 0 (tolerance 1e-10). Infeasible "
                      "points are still charged. The result is the best feasible observation.")
     if task.pool and not indexed:
-        lines.append(f"Each proposed point is mapped to the nearest untested of {task.n_candidates} "
-                     "candidates (space.json `candidates`), so repeating a point gives a different value.")
+        lines.append("The objective is not repeatable: the value at x depends on which points were "
+                     "already evaluated, so evaluating the same x again generally gives a different value.")
     if indexed:
         lines.append(f"This is a finite pool of {task.n_candidates} candidates whose features are "
                      "space.json `candidates`. Optimizers propose candidate indices, not points; each "

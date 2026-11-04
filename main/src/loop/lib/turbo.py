@@ -59,9 +59,14 @@ class Optimizer(Base):
             if not len(free):
                 return None
             inside = free[((self.cands[free] >= lo) & (self.cands[free] <= hi)).all(1)]
-            pool = self.cands[inside] if len(inside) else self.cands[free]
-            if len(pool) > self.n_candidates:
-                pool = pool[self.rng.choice(len(pool), self.n_candidates, replace=False)]
+            index = inside if len(inside) else free
+            if len(index) > self.n_candidates:
+                index = self.rng.choice(index, self.n_candidates, replace=False)
+            torch.manual_seed(self.seed + self.calls)
+            with torch.no_grad():
+                x = MaxPosteriorSampling(model, replacement=False)(torch.tensor(self.cands[index]), num_samples=1)
+            hit = np.flatnonzero((self.cands[index] == x[0].numpy()).all(1))
+            return int(index[hit[0]])
         else:
             pert = lo + (hi - lo) * qmc.Sobol(self.dim, seed=self.seed + self.calls).random(self.n_candidates)
             prob = min(20.0 / self.dim, 1.0)

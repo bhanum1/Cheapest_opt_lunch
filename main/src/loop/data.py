@@ -20,7 +20,7 @@ def space(task) -> dict:
     out = {"dim": task.dim, "bounds": np.asarray(task.bounds).tolist(),
            "n_constraints": task.n_constraints, "noisy": task.noisy,
            "indexed_pool": getattr(task, "indexed_pool", False), "candidates": None}
-    if task.pool:
+    if out["indexed_pool"]:  # a nearest-mapping pool keeps its candidates private
         out["candidates"] = np.asarray(task.candidates).tolist()
     return out
 

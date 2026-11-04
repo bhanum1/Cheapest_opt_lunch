@@ -7,12 +7,13 @@ This file names task identities. Keep it in `main/`; never copy it into a sandbo
 ## Overview
 
 A task is implemented once in `src/tasks/` and registered in `src/tasks/registry.py`.
-The baseline runner calls it directly. The isolated agent runner keeps it private
-and exposes `src/agent_harness/harness.py`, a generic transport client. There are
-no numbered agent harnesses or per-task copies of the objective.
+The baseline runner calls it directly. The agent loop (`src/loop/`) keeps it
+private: the agent and its optimizers see only `PROBLEM.md`, `space.json` and the
+evaluations in `data.csv`, and the runner evaluates every point itself. There are
+no per-task harnesses or copies of the objective.
 
-The native runner accepts every registered task. It exposes only the public
-contract below; a new task needs nothing runner-specific.
+The loop accepts every registered task. It exposes only the public contract
+below; a new task needs nothing runner-specific.
 
 ## 1. Register the Task
 
@@ -85,16 +86,17 @@ Figures (needs `matplotlib`): `../.venv/bin/python scripts/make_comparison_plots
 Run from the repository root:
 
 ```bash
-.venv/bin/python main/scripts/run_agent.py --task <key> --budget 100 --check-only
-.venv/bin/python main/scripts/run_agent.py --task <key> --budget 100
+.venv/bin/python main/scripts/run_loop.py --task <key> --budget 100 --check-only
+.venv/bin/python main/scripts/run_loop.py --task <key> --budget 100
 ```
 
 Follow the root [README](../README.md) for the separate optimizer environment,
-isolation boundary, outputs and plotting command. The runner copies the canonical
-root AGENTS.md and generic client into a fresh workspace. It gives the agent only
-dimension, bounds, direction, noise status, number of constraints and budget.
-Objective construction and scoring remain outside that workspace. Do not add a
-`task_<NNN>.py` or a new prompt.
+isolation boundary, outputs and plotting command. The runner copies `SKILL.md` and
+the optimizer library into a fresh workspace. It gives the agent only dimension,
+bounds, noise status, number of constraints and budget (and an indexed pool's
+features). Objective construction and scoring remain outside that workspace. Do not
+add a per-task prompt. If the task needs a new package in its objective, add it to
+`BACKENDS` in `src/loop/sandbox.py` so the agent runtime is refused if it has it.
 
 Discrete, categorical and conditional coordinates are decoded inside `_f`, so the
 agent sees the same box as the baselines. Constrained tasks return `(y, g)` from

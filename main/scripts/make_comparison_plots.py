@@ -8,7 +8,7 @@ Produces three figures in each <results>/<task>/ (default results_full/):
                                    each decision block)
   plot3_agent_method_timeline.png -- which method each agent was running,
                                    by evaluation, with decisions logged
-                                   in changelog.md (only for tasks
+                                   in decisions.md (only for tasks
                                    with an agent run)
 
 f_opt, seeds and budgets are read from the baseline meta.json files; agent
@@ -50,8 +50,8 @@ import numpy as np
 MAIN_ROOT = Path(__file__).resolve().parent.parent
 SANDBOX_ROOT = MAIN_ROOT.parent
 
-# Task results folder -> agent label -> sandbox results folder (trace.csv,
-# changelog.md). Missing folders are skipped, so a task can be listed
+# Task results folder -> agent label -> agent results folder (trace.csv,
+# decisions.md, or changelog.md for older runs). Missing folders are skipped, so a task can be listed
 # before its agent run exists.
 AGENT_RUNS = {}
 
@@ -391,8 +391,7 @@ def plot_agent_timeline(task_dir, baselines, agents):
                         color="white", fontweight="bold", zorder=3)
                 narrow_labels.append(f"{label} block {number}: {raw_label} ({start}–{end})")
 
-        # Logged deviations from the agent's pre-registered roadmap
-        # (changelog.md), not just "which method ran".
+        # The agent's decision checkpoints (decisions.md), not just "which method ran".
         for ev in a["deviations"]:
             ax.plot([ev, ev], [y0 - 0.32, y0 + 0.95], color=STATUS_WARNING, linestyle="--",
                     linewidth=1.3, zorder=4)

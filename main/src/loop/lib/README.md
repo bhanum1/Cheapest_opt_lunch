@@ -43,7 +43,8 @@ fitting.
 ## Building your own
 
 A custom optimizer may subclass `_base.Base` (`from _base import Base`).
-Implement `propose()` (a unit-cube point, or `None` when finished),
+Implement `propose()` (a unit-cube point, an exact candidate index on an
+indexed pool, or `None` when finished),
 `observe(u, value)` and optionally `absorb(u, value)`. Base handles bounds,
 pools, constraint merit, records (`self.U`, `self.y`, `self.best()`) and
 pickle save/load. `_local.Local` wraps a solver that calls `f` itself in

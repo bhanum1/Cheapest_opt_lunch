@@ -7,5 +7,5 @@ class Optimizer(Base):
     def propose(self):
         if self.indexed:
             free = [i for i in range(len(self.cands)) if i not in self.used and i not in self.pending]
-            return self.cands[self.rng.choice(free)] if free else None
+            return int(self.rng.choice(free)) if free else None
         return self.rng.random(self.dim)
