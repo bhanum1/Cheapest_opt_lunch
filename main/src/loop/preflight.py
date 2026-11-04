@@ -47,7 +47,7 @@ checks.append("objective backends absent")
 print(json.dumps(checks))
 '''
 
-FIXED = ["SKILL.md", "PROBLEM.md", "space.json", "host.py", "data.csv", "decisions.md", "lib", "blocks"]
+FIXED = ["SKILL.md", "PROBLEM.md", "space.json", "host.py", "check.py", "data.csv", "decisions.md", "lib", "blocks"]
 
 
 def check(policy: dict, forbidden: list[Path], private: Path) -> dict:

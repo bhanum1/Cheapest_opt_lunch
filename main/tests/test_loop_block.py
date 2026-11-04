@@ -111,6 +111,18 @@ class LoopBlockTests(unittest.TestCase):
         self.run_block(2, 1, args={"start": 5}, warm=True)
         self.assertEqual(self.dir.joinpath("state.json").read_text(), "[6, 3]")
 
+    def test_pickled_state_loads_in_next_block(self):
+        source = "import pickle\n" + COUNTER.replace(
+            "    def save(self, path):\n        open(path, \"w\").write(json.dumps([self.k, self.told]))",
+            "    def save(self, path):\n        pickle.dump(self, open(path, \"wb\"))").replace(
+            "        opt = cls(None)\n        opt.k, opt.told = json.loads(open(path).read())\n        return opt",
+            "        return pickle.load(open(path, \"rb\"))")
+        self.assertIn("pickle.dump", source)
+        script = self.script(source, "pickled.py")
+        self.assertEqual(self.run_block(1, 2, script=script).error, None)
+        self.assertEqual(self.run_block(2, 1, state="continue", script=script).error, None)
+        self.assertEqual(self.store.history()[0][-1][0], 3)
+
     def test_host_death_is_reported(self):
         result = self.run_block(1, 2, script=self.script("import os\nos._exit(3)\n", "dead.py"))
         self.assertIn("exited with code 3", result.error)

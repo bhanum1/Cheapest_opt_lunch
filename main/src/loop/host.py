@@ -29,8 +29,10 @@ import traceback
 
 
 def load_class(path):
+    # Registered under a fixed name, so pickled state from one block loads in the next.
     spec = importlib.util.spec_from_file_location("block_optimizer", path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules["block_optimizer"] = module
     spec.loader.exec_module(module)
     return module.Optimizer
 

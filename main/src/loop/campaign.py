@@ -3,7 +3,7 @@
 Run directory:
 
     workspace/            sandbox root; readable by agent and host
-      SKILL.md PROBLEM.md space.json host.py    fixed
+      SKILL.md PROBLEM.md space.json host.py check.py    fixed
       data.csv decisions.md                     written by the runner only
       lib/                library optimizers
       blocks/NNN_label.py snapshot of each block's optimizer (what the host loads)
@@ -59,7 +59,8 @@ class Campaign:
             (workspace / d).mkdir(parents=True, exist_ok=True)
         private.mkdir(mode=0o700)
         shutil.copyfile(LOOP / "SKILL.md", workspace / "SKILL.md")
-        shutil.copyfile(LOOP / "host.py", workspace / "host.py")
+        for name in ("host.py", "check.py"):
+            shutil.copyfile(LOOP / name, workspace / name)
         if (LOOP / "lib").is_dir():
             shutil.copytree(LOOP / "lib", workspace / "lib", dirs_exist_ok=True,
                             ignore=shutil.ignore_patterns("__pycache__"))
