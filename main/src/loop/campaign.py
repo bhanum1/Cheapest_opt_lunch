@@ -200,9 +200,10 @@ class Campaign:
                       f"{p['n_points']} evaluations: the optimizer reported it had finished "
                       "(converged or exhausted). Its state was saved.")
         if result.error:
+            error = result.error.replace(str(self.workspace) + "/", "").strip()[-3000:]
             self.note(f"Block {self.blocks} ({p['label']}) stopped after {result.used} of {p['n_points']} "
                       f"evaluations. Its state was not saved, so the next block for this label must "
-                      f"restart.\n\n```\n{result.error.strip()[-3000:]}\n```")
+                      f"restart.\n\n```\n{error}\n```")
 
     # ---- records -------------------------------------------------------------------------
 

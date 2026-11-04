@@ -68,4 +68,14 @@ the same host, so agent-written optimizers are only the class.
 6. **Remove the old path.** Delete `blind_runner`, `agent_harness`,
    `scripts/run_agent.py`; update root `AGENTS.md`, README and tests.
 7. **Smoke runs.** Small budget on a cheap task with each agent CLI,
-   including a deliberately crashing custom optimizer.
+   including a deliberately crashing custom optimizer. Done with Claude
+   (Codex deferred: not logged in on this machine).
+   - Opus, high, `constrained_ellipsoid10`, budget 40: Sobol 12, then
+     interpolation probes that found feasibility, then COBYLA 22. Best
+     1190.8 (optimum 1072.4); 15 tool calls; audit passed.
+   - Sonnet, medium, `sphere10`, budget 20, call 1 scripted to crash on its
+     third ask: the runner kept the two paid points and noted the
+     traceback; the agent restarted with warm-started BOBYQA. Audit passed,
+     but only 2 tool calls: analysis depth depends on model and effort.
+   - Both agents spent the whole remainder in the last block, justified for
+     restart-only methods.
