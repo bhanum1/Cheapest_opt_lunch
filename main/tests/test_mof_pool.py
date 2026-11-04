@@ -74,7 +74,7 @@ class MOFPoolIntegrity(unittest.TestCase):
 
     def test_baseline_dispatch_preserves_exact_rows_and_minimization(self):
         factory = lambda: CSVPoolTask(self.csv, 'mof_pool', maximize=True)
-        self.assertEqual(set(optimizers_for_task(factory())), {'gp_bo', 'turbo', 'pool_random'})
+        self.assertEqual(set(optimizers_for_task(factory())), {'gp_bo', 'sobol_gp_bo', 'turbo', 'pool_random'})
         with patch.dict('scripts.run_campaign.TASKS', {'synthetic': factory}):
             out = run_campaign('synthetic', 'pool_random', 0, 4, self.root / 'results')
             with (out / 'trace.csv').open() as stream:

@@ -1,4 +1,5 @@
-"""Build the private mixture pool from sdagent's lab measurements (campaign 11).
+"""Build the private mixture pool from sdagent's lab measurements: every row with
+measured mu, cp and rho (campaigns 1-11; campaign 12 has no cp).
 
 Features: the volume-fraction-weighted mean of each component's RDKit 2D
 descriptors (descriptors constant or non-finite across the components dropped).
@@ -21,13 +22,12 @@ import rdkit
 from rdkit import Chem, RDLogger
 from rdkit.Chem import Descriptors
 
-CAMPAIGN = "11"
 RDLogger.DisableLog("rdApp.*")
 HERE = Path(__file__).resolve().parent
 PRIVATE = HERE.parents[2] / "external/fluid_mixtures"
 
 rows = [r for r in csv.DictReader((PRIVATE / "measurements.csv").open(newline=""))
-        if r["measured_in_campaign"] == CAMPAIGN]
+        if r["cp"] and r["miu"] and r["rho"]]
 smiles = {r["id"]: r["smiles"] for r in csv.DictReader((PRIVATE / "fluid_library.csv").open(newline=""))}
 fluids = sorted({i for r in rows for i in r["fluid_ids"].split(";")})
 D = np.array([[fn(Chem.MolFromSmiles(smiles[i])) for _, fn in Descriptors._descList] for i in fluids], float)
@@ -46,11 +46,11 @@ with open(PRIVATE / "data.csv", "w", newline="") as f:
 sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
 names = [n for n, _ in Descriptors._descList]
 (HERE / "provenance.json").write_text(json.dumps({
-    "source": f"sdagent data/processed/measurements.csv, campaign {CAMPAIGN} (cleaned_processed_data.csv)",
+    "source": "sdagent data/processed/measurements.csv, every row with cp, miu and rho (campaigns 1-11)",
     "measurements_sha256": sha(PRIVATE / "measurements.csv"),
     "fluid_library_sha256": sha(PRIVATE / "fluid_library.csv"),
     "data_sha256": sha(PRIVATE / "data.csv"), "rdkit": rdkit.__version__,
-    "rows": len(rows), "fluids": len(fluids), "features": int(use.sum()),
+    "rows": len(rows), "campaigns": sorted({r["measured_in_campaign"] for r in rows}, key=int), "fluids": len(fluids), "features": int(use.sum()),
     "descriptors": [n for n, u in zip(names, use) if u],
     "objective": "minimize y = log10(mu / (cp * rho)^2), mu in Pa s, cp in J/(kg K), rho in kg/m3",
 }, indent=1) + "\n")

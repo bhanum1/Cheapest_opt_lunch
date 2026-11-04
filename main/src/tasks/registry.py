@@ -91,7 +91,7 @@ TASKS = {
     "opv_pool": lambda: OPVPoolTask(),
     # Exact rows from the supplied 1,000-material, 193-feature table; labels stay private.
     "mof_pool": lambda: CSVPoolTask(DATA / "mof_pool/data.csv", "mof_pool", maximize=True),
-    # sdagent's 1,300 measured mixtures of 12 heat-transfer fluids (lab campaign 11); fraction-weighted RDKit
+    # sdagent's 1,506 measured mixtures of 34 heat-transfer fluids (lab campaigns 1-11); fraction-weighted RDKit
     # descriptors; minimize log10 laminar pump work. Proprietary data in git-ignored external/fluid_mixtures/.
     "fluid_mixtures": lambda: CSVPoolTask(DATA.parents[1] / "external/fluid_mixtures/data.csv", "fluid_mixtures",
                                           maximize=False),
