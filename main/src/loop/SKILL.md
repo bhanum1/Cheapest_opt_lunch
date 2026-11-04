@@ -93,8 +93,11 @@ little. Prefer simple checks whose results you can interpret.
 - `warm_start` (with `restart` only): if true, the new optimizer is first
   told every earlier evaluation.
 
-The runner evaluates exactly `n_points` points, one at a time
-(`ask(1)`, evaluate, `tell`), and then saves the optimizer's state. If
+The runner evaluates `n_points` points, one at a time (`ask(1)`,
+evaluate, `tell`), and then saves the optimizer's state. A block ends
+early only if the optimizer reports it has finished (its `ask` returns an
+empty list, e.g. after converging); the runner notes this in
+`decisions.md`. If
 the proposal is invalid, the runner records why in `decisions.md` and
 calls you again without evaluating anything.
 
@@ -124,7 +127,8 @@ Put it in `work/<name>.py`, defining a class `Optimizer`:
 class Optimizer:
     def __init__(self, space, **args): ...  # space: the dict in space.json
     def ask(self, n): ...                   # list of n points (lists of floats);
-                                            # n candidate indices (ints) if space["indexed_pool"]
+                                            # n candidate indices (ints) if space["indexed_pool"];
+                                            # [] when it has finished
     def tell(self, X, y, g): ...            # X as asked; y floats; g one constraint list per point
     def save(self, path): ...               # write all state needed to resume to `path`
     @classmethod
@@ -150,8 +154,11 @@ class Optimizer:
   continues. A crash partway through a real block keeps the evaluations
   already made, but loses the optimizer's state.
 
-You may wrap installed libraries (numpy, scipy, cma, torch, botorch,
-gpytorch, pandas) this way. There is no network and nothing can be
+A custom optimizer is one file: it is copied to `blocks/` when it runs,
+so it cannot import other files in `work/`. It may import library
+modules, e.g. `from _base import Base` (see `lib/README.md`) or a library
+optimizer to subclass. You may wrap installed libraries (numpy, scipy,
+cma, torch, botorch, gpytorch, pybobyqa, pandas) this way. There is no network and nothing can be
 installed.
 
 ## `agent/decision.md`

@@ -1,3 +1,51 @@
 # Library optimizers
 
-None yet. Write your own in work/.
+Use one with `"script": "lib/<name>.py"`. Every optimizer takes `seed`
+(default 0) plus the arguments listed in its file's docstring; read it
+for exact defaults. Optimizers work in the unit cube internally: step
+sizes, radii and lengths are fractions of each variable's range, while
+`x0` and points are in real coordinates.
+
+| Name | Method | Spaces | `continue` resumes |
+|---|---|---|---|
+| `random_search` | Uniform random points, or uniform unused candidates | box, pool | exactly |
+| `sobol` | Scrambled Sobol sequence | box | exactly |
+| `fixed_points` | The points (or candidate indices) you list in `points`, then finishes | box, pool | exactly |
+| `cma_es` | CMA-ES (pycma): `x0`, `sigma0`, `popsize`, `options` | box, pool* | exactly |
+| `de` | Differential evolution, steady state: `pop_size`, `F`, `CR`, `strategy` | box, pool* | exactly |
+| `pso` | Particle swarm: `swarm`, `w`, `c1`, `c2`, `vmax` | box, pool* | exactly |
+| `nelder_mead` | Nelder-Mead simplex: `x0`, `step`, `adaptive`, `xtol`, `ftol` | box, pool* | exactly |
+| `gp_bo` | GP Bayesian optimization (botorch): `n_init`, `acquisition` (logei, ucb), `beta` | box, pool | from the data (model refitted each step) |
+| `turbo` | TuRBO-1 trust-region BO: `n_init`, `length_*`, `success_tol`, `failure_tol` | box, pool | exactly |
+| `lbfgsb` | L-BFGS-B with finite differences (scipy): `x0`, `eps`, `ftol`, `gtol` | box | restart-only |
+| `powell` | Powell's method (scipy): `x0`, `xtol`, `ftol` | box | restart-only |
+| `bobyqa` | BOBYQA quadratic-model trust region (Py-BOBYQA): `x0`, `rhobeg`, `rhoend`, `npt` | box | restart-only |
+| `cobyla` | COBYLA, handles the constraints directly (scipy): `x0`, `rhobeg`, `tol` | box | restart-only |
+
+\* On an indexed pool, a continuous method's proposed point is replaced by
+the nearest unused candidate.
+
+**Restart-only:** the solver's internal model cannot be saved. Every block
+restarts it from the best point this label has been told, so it rebuilds its
+model each block (e.g. BOBYQA spends `npt` evaluations doing so). Prefer
+longer blocks for these methods. They end a block early when they converge.
+
+**Warm start** (`"warm_start": true` with `restart`): every earlier
+evaluation is told first. Model-based methods (`gp_bo`, `turbo`) fit them.
+Population methods (`de`, `pso`) fill their initial population with them,
+best first. Start-point methods (`cma_es`, `nelder_mead` and the local
+solvers) start at the best of them unless `x0` is given.
+
+**Constraints:** all methods except `cobyla` rank an infeasible point above
+every feasible one, by total violation. GP methods cap those values before
+fitting.
+
+## Building your own
+
+A custom optimizer may subclass `_base.Base` (`from _base import Base`).
+Implement `propose()` (a unit-cube point, or `None` when finished),
+`observe(u, value)` and optionally `absorb(u, value)`. Base handles bounds,
+pools, constraint merit, records (`self.U`, `self.y`, `self.best()`) and
+pickle save/load. `_local.Local` wraps a solver that calls `f` itself in
+the same way (restart-only). `_gp.fit(U, targets, seed)` fits the GP used
+by `gp_bo` and `turbo`.

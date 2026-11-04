@@ -41,7 +41,7 @@ def connect(address):
         s.connect(address)
 denied("external network denied", lambda: connect(("1.1.1.1", 443)))
 denied("local service denied", lambda: connect(("127.0.0.1", port)))
-for name in ["ioh", "cocoex", "opfunu", "pymoo", "yahpo_gym"]:
+for name in ["ioh", "cocoex", "opfunu", "pymoo", "yahpo_gym", "nevergrad"]:
     assert importlib.util.find_spec(name) is None, "objective backend importable: " + name
 checks.append("objective backends absent")
 print(json.dumps(checks))

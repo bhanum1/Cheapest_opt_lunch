@@ -45,7 +45,11 @@ class Host:
 
 def rounds(host, space, n, used):
     for _ in range(n):
-        x = host.call({"op": "ask", "n": 1})["X"][0]
+        X = host.call({"op": "ask", "n": 1})["X"]
+        if not X:
+            print("optimizer reported it finished")
+            return
+        x = X[0]
         if space["indexed_pool"]:
             assert isinstance(x, int) and x not in used, f"bad or repeated index {x!r}"
             used.add(x)

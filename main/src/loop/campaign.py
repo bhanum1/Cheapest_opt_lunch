@@ -188,6 +188,10 @@ class Campaign:
                            sandbox.environment(self.workspace) if sandboxed else None,
                            host_script=self.workspace / "host.py")
         self.labels[p["label"]] = {"source": p["_source"], "saved": result.state_saved}
+        if result.finished:
+            self.note(f"Block {self.blocks} ({p['label']}) ended early after {result.used} of "
+                      f"{p['n_points']} evaluations: the optimizer reported it had finished "
+                      "(converged or exhausted). Its state was saved.")
         if result.error:
             self.note(f"Block {self.blocks} ({p['label']}) stopped after {result.used} of {p['n_points']} "
                       f"evaluations. Its state was not saved, so the next block for this label must "

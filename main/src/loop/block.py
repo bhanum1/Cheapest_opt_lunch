@@ -34,6 +34,7 @@ class Result:
     used: int
     error: str | None   # None if the block completed and its state was saved
     state_saved: bool
+    finished: bool = False  # the optimizer reported it had nothing more to propose
 
 
 class HostError(Exception):
@@ -97,8 +98,12 @@ def run(task, store, block: Block, state_path: Path, space_path: Path, log: Path
         if mode == "new" and block.warm_start and len(store):
             X, y, g = store.history()
             host.call({"op": "tell", "X": X, "y": y, "g": g})
+        finished = False
         while used < block.n_points:
             x = host.call({"op": "ask", "n": 1})["X"]
+            if not x:
+                finished = True
+                break
             if len(x) != 1:
                 raise HostError(f"ask(1) returned {len(x)} items")
             x, index = _check(task, store, x[0])
@@ -108,7 +113,7 @@ def run(task, store, block: Block, state_path: Path, space_path: Path, log: Path
             host.call({"op": "tell", "X": [index if index is not None else list(x)],
                        "y": [ev.y], "g": [list(ev.g)]})
         host.call({"op": "save"})
-        return Result(used, None, True)
+        return Result(used, None, True, finished)
     except (HostError, ValueError, json.JSONDecodeError) as e:
         return Result(used, str(e), False)
     finally:

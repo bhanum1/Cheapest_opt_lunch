@@ -9,7 +9,8 @@ OPTIMIZER_FILE defines a class `Optimizer`:
 
     Optimizer(space, **args)       space: dict from SPACE_JSON
     ask(n) -> list                 n points (lists of floats), or n candidate
-                                   indices for an indexed-pool space
+                                   indices for an indexed-pool space; an empty
+                                   list means the optimizer has finished
     tell(X, y, g) -> None          X as asked; y floats; g one list per point
     save(path) -> None
     Optimizer.load(path)           classmethod returning the saved optimizer
@@ -26,6 +27,9 @@ import importlib.util
 import json
 import sys
 import traceback
+from pathlib import Path
+
+LIB = Path(__file__).resolve().parent / "lib"  # library modules may import each other
 
 
 def load_class(path):
@@ -33,6 +37,8 @@ def load_class(path):
     spec = importlib.util.spec_from_file_location("block_optimizer", path)
     module = importlib.util.module_from_spec(spec)
     sys.modules["block_optimizer"] = module
+    if str(LIB) not in sys.path:
+        sys.path.insert(0, str(LIB))
     spec.loader.exec_module(module)
     return module.Optimizer
 

@@ -13,7 +13,7 @@ from pathlib import Path
 
 AGENT_WRITES = ["work", "agent", ".tmp"]
 HOST_WRITES = ["state", ".tmp"]
-BACKENDS = ["ioh", "cocoex", "opfunu", "pymoo", "yahpo_gym"]
+BACKENDS = ["ioh", "cocoex", "opfunu", "pymoo", "yahpo_gym", "nevergrad"]
 
 
 def toml(value):
