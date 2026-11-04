@@ -240,14 +240,14 @@ Run all standalone optimizers at the same budget into a **new** results director
   --outdir runs/baselines-100
 ```
 
-Always pass `--outdir`: the defaults (`--budget 2000 --seeds 10 --outdir results_linux`)
+Always pass `--outdir`: the defaults (`--budget 2000 --seeds 10 --outdir results_full`)
 resolve relative to the current directory. Each campaign writes
 `<outdir>/<task_name>/<optimizer>/seed_<seed>/{trace.csv,meta.json}`. Reruns skip
 completed campaigns; a sweep whose existing campaigns used a different budget
 errors before running anything.
 
 Stochastic baselines use ten seeds; deterministic methods use one. Current sweeps
-use the requested budget for every method. Historical `main/results_linux/` runs
+use the requested budget for every method. Historical `main/results_full/` runs
 may have GP-BO, TuRBO and BOBYQA capped at 100; inspect their metadata. The newest
 full-budget benchmark is also preserved under `main/`. Numerical results can
 vary by platform and library version; use matched environments for formal comparisons.
@@ -273,7 +273,7 @@ printed run ID:
 
 `--task` is the results folder name (`<task_name>`, listed per key in
 [TASKS.md](main/TASKS.md)), not the registry key. To compare against the
-committed baselines instead of your own sweep, pass `--results main/results_linux`.
+committed baselines instead of your own sweep, pass `--results main/results_full`.
 Figures go to `runs/run-<id>/figures/<task_name>/`.
 
 This produces baseline convergence, a final-regret comparison, and an agent
@@ -287,13 +287,13 @@ The cross-task metric (regret relative to random search, averaged over tasks)
 reads a results folder under `main/` and writes `global_metric_vs_budget.png` into it:
 
 ```bash
-.agent-venv/bin/python main/scripts/make_global_metric_plots.py --results results_linux
+.agent-venv/bin/python main/scripts/make_global_metric_plots.py --results results_full
 ```
 
 Figures that leave the repo follow [FIGURES.md](main/FIGURES.md). Their scripts
 (`make_crossover_plot.py`, `make_agent_switching_plot.py`,
 `make_agent_switching_gif.py`, `make_landscape_plot.py`) write into
-`main/results_linux/`; each docstring names its outputs and is run from `main/`.
+`main/results_full/`; each docstring names its outputs and is run from `main/`.
 
 ## Task-specific guides
 
@@ -313,9 +313,8 @@ Figures that leave the repo follow [FIGURES.md](main/FIGURES.md). Their scripts
 - `main/src/blind_runner/`: native execution, private evaluator and orchestration.
 - `main/scripts/`: agent runner, baseline runner and plotting entry points.
 - `main/tests/`: integrity tests for the evaluator and pool tasks.
-- `main/results_linux/`: committed baseline traces and figures.
+- `main/results_full/`: committed baseline traces and figures.
 - `main/agent_runs/`: published agent campaigns and comparison reports.
-- `archive_results/`: preserved historical agent artifacts; old source is in Git history.
 - `task_005_baseline/`, `task_006_baseline/`, `poly_results/`: polymer data/model utilities and existing figures.
 - `external/`: ignored third-party data (YAHPO surrogates, user-supplied evaluators).
 - `runs/`: ignored generated workspaces, logs and new results.
@@ -323,8 +322,6 @@ Figures that leave the repo follow [FIGURES.md](main/FIGURES.md). Their scripts
 The numbered local harnesses, copied sandbox implementations and old planning
 briefs have been retired. A new supported task reuses the same public client.
 
-The historical PSA campaign in `main/scripts/campaign_psa_v10_run1.py` retains its
-original in-process harness in `_psa_v10_legacy_harness.py` for reproducibility.
 Use `run_agent.py` for new isolated agent campaigns on supported tasks.
 
 The integrity tests use fake objectives to check budget exhaustion, duplicate

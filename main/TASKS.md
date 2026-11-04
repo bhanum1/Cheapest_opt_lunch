@@ -27,7 +27,7 @@ This file names task identities. Keep it in `main/`; never copy it into a sandbo
 
 ## Per Task
 
-Folder: `results_linux/<folder>/`. "Random" is the median random-search regret over 500 uniform points; "center" is the regret at the box center, where deterministic optimizers (`lbfgsb`, `nelder_mead`, `bobyqa`) start. Winners are median regret over seeds of the baselines in `results_linux/`, at 100 and 2000 evaluations (GP-BO, TuRBO, BOBYQA capped at 100).
+Folder: `results_full/<folder>/`. "Random" is the median random-search regret over 500 uniform points; "center" is the regret at the box center, where deterministic optimizers (`lbfgsb`, `nelder_mead`, `bobyqa`) start. Winners are median regret over seeds of the baselines in `results_full/`, at 100 and 2000 evaluations (GP-BO, TuRBO, BOBYQA capped at 100).
 
 ### Unconstrained, Noiseless
 
@@ -121,7 +121,7 @@ Tasks that each add a distinct behavior: `step_ellipsoid10` and `noncont_rastrig
 
 ## Superseded Versions
 
-Their baseline results were deleted from `results_linux/`; they remain in git history (last present in commit `3b1005a`).
+Their baseline results were deleted from `results_full/`; they remain in git history (last present in commit `3b1005a`).
 
 | Folder | Why replaced |
 | --- | --- |

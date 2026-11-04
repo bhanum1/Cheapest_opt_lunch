@@ -74,11 +74,11 @@ Run the sweep (every optimizer, resumable):
 ../.venv/bin/python scripts/run_sweep.py --task <key> --workers <n>
 ```
 
-Budget 2000 for every optimizer (`BUDGET_CAPS` is empty; `results_linux/` predates this and has `gp_bo`, `turbo`, `bobyqa` capped at 100). Seeds 0–9. Deterministic optimizers (`bobyqa`, `nelder_mead`, `lbfgsb`) run seed 0 only. Reruns skip completed campaigns; a budget mismatch with existing results errors (use a new `--outdir`).
+Budget 2000 for every optimizer (`BUDGET_CAPS` is empty; older runs in `results_full/` may have `gp_bo`, `turbo`, `bobyqa` capped at 100). Seeds 0–9. Deterministic optimizers (`bobyqa`, `nelder_mead`, `lbfgsb`) run seed 0 only. Reruns skip completed campaigns; a budget mismatch with existing results errors (use a new `--outdir`).
 
-Outputs land in `results_linux/<task.name>/<optimizer>/seed_<n>/` (`trace.csv`, `meta.json`). Run sweeps on Linux (Trillium: `sbatch -p debug scripts/slurm/sweep_all.sh <key>`): results differ bit-for-bit across platforms, so `results_linux/` holds Linux runs only. `results/` holds upstream's original (macOS) baselines. Check `eval_seconds` in the smoke run before sweeping an expensive task.
+Outputs land in `results_full/<task.name>/<optimizer>/seed_<n>/` (`trace.csv`, `meta.json`). Run sweeps on Linux (Trillium: `sbatch -p debug scripts/slurm/sweep_all.sh <key>`): results differ bit-for-bit across platforms, so `results_full/` holds Linux runs only. `results/` holds upstream's original (macOS) baselines. Check `eval_seconds` in the smoke run before sweeping an expensive task.
 
-Figures (needs `matplotlib`): `../.venv/bin/python scripts/make_comparison_plots.py [--task <task.name>]` writes `plot1_counterfactual_bar.png`, `plot2_regret_vs_eval.png` and, once an agent run exists, `plot3_agent_method_timeline.png` into `results_linux/<task.name>/`. Add the task's sandbox results folder to `AGENT_RUNS` in that script. Commit results and figures.
+Figures (needs `matplotlib`): `../.venv/bin/python scripts/make_comparison_plots.py [--task <task.name>]` writes `plot1_counterfactual_bar.png`, `plot2_regret_vs_eval.png` and, once an agent run exists, `plot3_agent_method_timeline.png` into `results_full/<task.name>/`. Add the task's sandbox results folder to `AGENT_RUNS` in that script. Commit results and figures.
 
 ## 4. Isolated Agent Run
 

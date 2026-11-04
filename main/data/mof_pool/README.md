@@ -53,7 +53,7 @@ training target.
 ```
 
 These are reproduction commands; the published comparison uses the supplied
-`results_linux.zip` GP-BO and TuRBO traces (10 seeds each), preserved in the
+`results_full.zip` GP-BO and TuRBO traces (10 seeds each), preserved in the
 [materials result package](../../agent_runs/materials_astra_max_100_3seeds_20261022/README.md).
 The supplied traces contain 110 evaluations. The comparison uses calls 1–100,
 including their ten random initialization calls, and discards calls 101–110.

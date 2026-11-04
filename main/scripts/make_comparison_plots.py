@@ -1,6 +1,6 @@
 """Comparison plots: agent runs vs. the classical baselines, per task.
 
-Produces three figures in each <results>/<task>/ (default results_linux/):
+Produces three figures in each <results>/<task>/ (default results_full/):
   plot1_counterfactual_bar.png  -- final regret: agents vs. every standalone baseline
   plot2_regret_vs_eval.png      -- regret-vs-evaluation trajectories, all
                                    baselines (mean over seeds) plus the
@@ -53,17 +53,7 @@ SANDBOX_ROOT = MAIN_ROOT.parent
 # Task results folder -> agent label -> sandbox results folder (trace.csv,
 # changelog.md). Missing folders are skipped, so a task can be listed
 # before its agent run exists.
-AGENT_RUNS = {
-    "rosenbrock_d10_i1": {
-        "Claude agent": "archive_results/task_001_sandbox_claud/results/agent_task_001",
-        "OpenAI agent": "archive_results/task_001_sandbox_openai/results/agent_task_001",
-    },
-    "psa_v10_d8": {"Agent": "main/agent_runs/psa_v10_blackbox_run1"},
-    "rastrigin_d10_i1": {"Agent": "archive_results/task_002_sandbox/results/agent_task_002"},
-    "bent_cigar_d10_i1": {"Agent": "archive_results/task_003_sandbox/results/agent_task_003"},
-    "sphere_d10_i1": {"Agent": "archive_results/task_004_sandbox/results/agent_task_004"},
-    "opv_pce_d11": {"Claude agent": "archive_results/task_005_sandbox/results/agent_task_005"},
-}
+AGENT_RUNS = {}
 
 # Validated default categorical palette, fixed order (see module docstring).
 BLUE, ORANGE, AQUA, YELLOW, MAGENTA = (
@@ -465,7 +455,7 @@ def make_plots(task_dir: Path, agent_run=None, budget=None, outdir=None):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--results", default=str(MAIN_ROOT / "results_linux"))
+    p.add_argument("--results", default=str(MAIN_ROOT / "results_full"))
     p.add_argument("--task", help="one results/<task> folder name; default: every task")
     p.add_argument("--agent-run", type=Path, help="completed run's workspace/results/agent_run directory")
     p.add_argument("--budget", type=int, help="comparison horizon; defaults to the supplied agent's budget")

@@ -23,7 +23,7 @@ Noisy tasks use the observed best (y_best_so_far), as the per-task plots do.
 Agents ran on only a few tasks, so their R covers just those tasks (counted in
 the printed table) and they are left off the aggregate curve.
 
-Writes <results>/global_metric_vs_budget.png (default results_linux/), R_a(B)
+Writes <results>/global_metric_vs_budget.png (default results_full/), R_a(B)
 vs. evaluations for every baseline, and prints R_a at B = 100 and 2000.
 
 Usage (from main/):
@@ -183,7 +183,7 @@ def plot_vs_budget(results_root, rel, skipped):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--results", default="results_linux", help="results folder under main/")
+    parser.add_argument("--results", default="results_full", help="results folder under main/")
     args = parser.parse_args()
     results_root = MAIN_ROOT / args.results
     rel, skipped = relative_regrets(results_root)

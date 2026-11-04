@@ -11,8 +11,8 @@ make_agent_switching_gif.py). --method picks the run:
            (seed 1: 4.13 vs. median 4.40). Seeds range 2.8-8.6.
 
 Runs come from results_full, the baseline set the Astra max campaign is
-scored against (its summary.csv). results_linux is not used: its BOBYQA run on
-this task has a 100-evaluation budget.
+scored against (its summary.csv). The removed results_linux set is not used: its BOBYQA run on
+this task had a 100-evaluation budget.
 
 Comparability with the agent figure:
   - same landscape slice: the agent's plane, extents and contour bands;
@@ -27,7 +27,7 @@ Comparability with the agent figure:
 Usage (from main/):
     python scripts/make_single_optimizer_plot.py                   # bobyqa
     python scripts/make_single_optimizer_plot.py --method cma_es
-    # writes results_linux/single_optimizer_rosenbrock_<method>.{png,gif}
+    # writes results_full/single_optimizer_rosenbrock_<method>.{png,gif}
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ def main():
     method = parser.parse_args().method
     seed, label, color = METHODS[method]
     stages = [(label, color, {method})]
-    out_png = sw.MAIN / f"results_linux/single_optimizer_rosenbrock_{method}.png"
+    out_png = sw.MAIN / f"results_full/single_optimizer_rosenbrock_{method}.png"
     out_gif = out_png.with_suffix(".gif")
     Xa, regret_a, stage_a = sw.load_run()
     f_opt = json.loads(sw.F_OPT_META.read_text())["task_f_opt"]
