@@ -48,7 +48,9 @@ class Campaign:
         self.store = data.Store(self.task, self.workspace / "data.csv", self.private / "journal.csv")
         self.decisions = self.workspace / "decisions.md"
         self.blocks = 0
-        self.labels: dict[str, dict] = {}  # label -> {"script": hash text, "saved": bool}
+        self.labels: dict[str, dict] = {}  # label -> {"source": script text, "saved": bool}
+        self.log: list[dict] = []  # one entry per accepted proposal, saved to private/blocks.json
+        self.written = self.decisions.read_text() if self.decisions.exists() else ""
 
     # ---- setup ---------------------------------------------------------------------------
 
@@ -171,6 +173,8 @@ class Campaign:
 
     def record(self, number: int, proposal: dict, decision: str) -> None:
         shown = {k: v for k, v in proposal.items() if not k.startswith("_")}
+        self.log.append({"call": number, "after": len(self.store), "proposal": shown})
+        self.save_log()
         self.append(f"## Decision after evaluation {len(self.store)} (call {number})\n\n{decision}\n\n"
                     f"Proposal: `{json.dumps(shown)}`\n")
 
@@ -188,6 +192,9 @@ class Campaign:
                            sandbox.environment(self.workspace) if sandboxed else None,
                            host_script=self.workspace / "host.py")
         self.labels[p["label"]] = {"source": p["_source"], "saved": result.state_saved}
+        self.log[-1].update(block=self.blocks, script=script.name, used=result.used,
+                            finished=result.finished, error=result.error is not None)
+        self.save_log()
         if result.finished:
             self.note(f"Block {self.blocks} ({p['label']}) ended early after {result.used} of "
                       f"{p['n_points']} evaluations: the optimizer reported it had finished "
@@ -204,8 +211,12 @@ class Campaign:
         return reason
 
     def append(self, text: str) -> None:
+        self.written += "\n" + text
         with open(self.decisions, "a") as f:
             f.write("\n" + text)
+
+    def save_log(self) -> None:
+        (self.private / "blocks.json").write_text(json.dumps(self.log, indent=1))
 
     def snapshot_context(self, number: int) -> None:
         logs = self.private / "calls" / f"{number:03d}"

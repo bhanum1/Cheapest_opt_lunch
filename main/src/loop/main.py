@@ -8,9 +8,10 @@ import shutil
 import sys
 import tempfile
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
-from . import agents, campaign, preflight, sandbox
+from . import agents, campaign, preflight, results, sandbox
 
 REPO = campaign.REPO
 
@@ -84,6 +85,10 @@ def main(argv=None) -> int:
             raise RuntimeError(f"Call {number} used tools outside the sandbox: {unexpected}")
         return code
 
+    started = datetime.now(timezone.utc).isoformat()
     reason = run.run(call)
-    print(f"Finished ({reason}): {len(run.store)}/{args.budget} evaluations. Run: {root}")
+    report = results.audit(run, args.agent)
+    results.write(run, cfg, reason, report, started)
+    print(f"Finished ({reason}): {len(run.store)}/{args.budget} evaluations, audit passed. "
+          f"Results: {root / 'results'}")
     return 0

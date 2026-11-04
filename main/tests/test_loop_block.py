@@ -41,7 +41,7 @@ class Optimizer:
 
 
 class Quadratic:
-    name, dim, n_constraints, noisy, pool = "quad", 2, 0, False, False
+    name, dim, n_constraints, noisy, pool, f_opt = "quad", 2, 0, False, False, 0.0
     bounds = np.array([[-10.0, 10.0]] * 2)
 
     def evaluate(self, x):

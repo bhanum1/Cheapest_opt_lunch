@@ -212,7 +212,8 @@ def load_task(task_dir: Path, agent_run=None, budget=None):
             rows = rows[:budget]
         if not rows:
             raise ValueError(f"Agent trace is empty: {run_dir}")
-        checkpoints = [n for n in changelog_evals(run_dir / "changelog.md") if n <= len(rows)]
+        record = run_dir / "decisions.md" if (run_dir / "decisions.md").exists() else run_dir / "changelog.md"
+        checkpoints = [n for n in changelog_evals(record) if n <= len(rows)]
         agents[label] = dict(
             x=np.array([int(r["eval_idx"]) for r in rows]),
             regret=regret_trajectory(rows, f_opt),
@@ -457,7 +458,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--results", default=str(MAIN_ROOT / "results_full"))
     p.add_argument("--task", help="one results/<task> folder name; default: every task")
-    p.add_argument("--agent-run", type=Path, help="completed run's workspace/results/agent_run directory")
+    p.add_argument("--agent-run", type=Path, help="completed run's results directory (runs/run-*/results)")
     p.add_argument("--budget", type=int, help="comparison horizon; defaults to the supplied agent's budget")
     p.add_argument("--outdir", type=Path, help="write figures here/<task>, leaving baseline artifacts unchanged")
     args = p.parse_args()

@@ -11,7 +11,7 @@ import unittest
 MAIN = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MAIN))
 
-from src.loop import campaign, sandbox
+from src.loop import campaign, results, sandbox
 from test_loop_block import COUNTER, Quadratic
 
 REPO = MAIN.parent
@@ -101,6 +101,31 @@ class LoopCampaignTests(unittest.TestCase):
         agent = FakeAgent(self.run, [counter(1), counter(1, "continue"), {"n_points": 0}])
         self.run.run(edit_then_continue)
         self.assertIn("changed since", (self.run.workspace / "decisions.md").read_text())
+
+    def test_audit_passes_and_results_are_written(self):
+        self.play([counter(3, crash_at=3), "{bad", counter(2), counter(1, "continue"), {"n_points": 0}])
+        report = results.audit(self.run, None)
+        self.assertTrue(report["passed"], report)
+        cfg = {"task": "quad", "agent": "fake", "model": "none", "effort": "none"}
+        results.write(self.run, cfg, "budget", report, "start")
+        with open(self.root / "results/trace.csv") as f:
+            trace = list(__import__("csv").DictReader(f))
+        self.assertEqual([r["optimizer"] for r in trace], ["counter"] * 2 + ["counter"] * 3)
+        self.assertEqual([float(r["y_best_so_far"]) for r in trace], [1, 1, 1, 1, 1])
+        meta = json.loads((self.root / "results/meta.json").read_text())
+        self.assertEqual((meta["evaluations_used"], meta["blocks"], meta["best_y"]), (5, 3, 1.0))
+
+    def test_audit_detects_tampering(self):
+        self.play([counter(2), {"n_points": 0}])
+        decisions = self.run.workspace / "decisions.md"
+        decisions.write_text(decisions.read_text().replace("Decision 1.", "Edited."))
+        with self.assertRaises(RuntimeError):
+            results.audit(self.run, None)
+        decisions.write_text(self.run.written)
+        data = self.run.workspace / "data.csv"
+        data.write_text(data.read_text().replace(",1.0,", ",0.5,", 1))
+        with self.assertRaises(RuntimeError):
+            results.audit(self.run, None)
 
     @unittest.skipUnless(shutil.which("codex") and (REPO / ".agent-venv/bin/python").exists(),
                          "needs the Codex CLI and .agent-venv")

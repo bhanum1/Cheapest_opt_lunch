@@ -55,12 +55,13 @@ class Store:
                "feasible": ev.feasible, "y_true": ev.y_true, "eval_seconds": ev.elapsed}
         row.update({f"x{d}": float(v) for d, v in enumerate(x)})
         row.update({f"g{i}": v for i, v in enumerate(ev.g)})
+        text = {c: "" if row[c] is None else str(row[c]) for c in self.private_columns}
         for path, columns in ((self.public, self.columns), (self.private, self.private_columns)):
             with open(path, "a", newline="") as f:
-                csv.writer(f).writerow(["" if row[c] is None else row[c] for c in columns])
+                csv.writer(f).writerow([text[c] for c in columns])
                 f.flush()
                 os.fsync(f.fileno())
-        self.rows.append({c: str(row[c]) for c in self.private_columns})
+        self.rows.append(text)
 
     def history(self):
         """(X, y, g) of every evaluation so far, in the form optimizers are told.
