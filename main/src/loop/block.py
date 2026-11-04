@@ -41,11 +41,11 @@ class HostError(Exception):
 
 
 class Host:
-    def __init__(self, command: list[str], timeout: float, log: Path):
+    def __init__(self, command: list[str], timeout: float, log: Path, env: dict | None):
         self.timeout, self.log = timeout, log
         with open(log, "a") as stderr:  # a file, so a chatty optimizer cannot fill a pipe
             self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                            stderr=stderr, text=True)
+                                            stderr=stderr, text=True, env=env)
         self.selector = selectors.DefaultSelector()
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
 
@@ -82,15 +82,16 @@ class Host:
                 pass
 
 
-def run(task, store, block: Block, state_path: Path, space_path: Path,
-        prefix: list[str] = (), python: str = sys.executable, timeout: float = 600) -> Result:
+def run(task, store, block: Block, state_path: Path, space_path: Path, log: Path | None = None,
+        prefix: list[str] = (), python: str = sys.executable, env: dict | None = None,
+        timeout: float = 600, host_script: Path = HOST) -> Result:
     """Run `block` against `task`, appending every evaluation to `store`.
-    `prefix` wraps the host command (the sandbox launcher)."""
+    `prefix` wraps the host command (the sandbox launcher); the host's stderr goes to `log`."""
     mode = "load" if block.state == "continue" else "new"
-    command = [*prefix, python, str(HOST), str(block.script), str(space_path),
+    command = [*prefix, python, str(host_script), str(block.script), str(space_path),
                str(state_path), json.dumps(block.args), mode]
     used = 0
-    host = Host(command, timeout, state_path.with_name(f"block_{block.number}.log"))
+    host = Host(command, timeout, log or state_path.with_name(f"block_{block.number}.log"), env)
     try:
         host.call(None)  # ready
         if mode == "new" and block.warm_start and len(store):
