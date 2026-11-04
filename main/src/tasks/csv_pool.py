@@ -1,8 +1,9 @@
-"""Private measured MOF pool from the supplied task_061 archive.
+"""An exact candidate pool from a private CSV with columns id,x0,x1,...,y.
 
 Preserve exact CSV row identity, including any identical feature vectors.
-Only anonymous row indices and feature values are public. Minimize -raw_y;
-material IDs and full-pool ranks are trusted-side reporting information.
+Only anonymous row indices and feature values are public. The registered
+objective is -raw_y when maximizing, raw_y otherwise; material IDs and
+full-pool ranks are trusted-side reporting information.
 """
 import csv
 from numbers import Integral
@@ -13,16 +14,17 @@ import numpy as np
 
 from .base import Evaluation, Task
 
-DATA_PATH = Path(__file__).resolve().parents[2] / 'data/mof_pool/data.csv'
+DATA = Path(__file__).resolve().parents[2] / 'data'
 
 
-class MOFPoolTask(Task):
+class CSVPoolTask(Task):
     pool = True
     indexed_pool = True
 
-    def __init__(self, data_path=None):
-        path = Path(data_path) if data_path is not None else DATA_PATH
+    def __init__(self, path, name, maximize):
+        path = Path(path)
         self.private_data_paths = (path,)
+        self._sign = -1.0 if maximize else 1.0
         with path.open(newline='', encoding='utf-8-sig') as stream:
             reader = csv.DictReader(stream)
             fields = reader.fieldnames or []
@@ -43,8 +45,8 @@ class MOFPoolTask(Task):
         self.dim = self.candidates.shape[1]
         self.n_candidates = len(records)
         self.bounds = np.column_stack((self.candidates.min(0), self.candidates.max(0)))
-        self.name = f'mof_pool_d{self.dim}_n{self.n_candidates}'
-        self.f_opt = -float(self._raw_y.max())
+        self.name = f'{name}_d{self.dim}_n{self.n_candidates}'
+        self.f_opt = float((self._sign * self._raw_y).min())
         self._tested = np.zeros(self.n_candidates, dtype=bool)
         self.last_candidate = None
 
@@ -61,7 +63,7 @@ class MOFPoolTask(Task):
     def evaluate_index(self, index):
         self.validate_index(index)
         start = time.perf_counter()
-        y = -float(self._raw_y[index])
+        y = self._sign * float(self._raw_y[index])
         self._tested[index] = True
         self.last_candidate = self._ids[index]
         return Evaluation(y=y, g=(), elapsed=time.perf_counter() - start)

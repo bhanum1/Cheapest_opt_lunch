@@ -6,7 +6,7 @@ are recorded in `provenance.json`. It contains **1,000 rows and 193 features**,
 including 28 constant features. The archive README describes 5,882 rows; that
 larger table was not supplied. No rows were removed, reordered, or regenerated.
 
-The registered task is `mof_pool`, implemented in `main/src/tasks/mof_pool.py`.
+The registered task is `mof_pool`, built as `CSVPoolTask(..., maximize=True)` in `main/src/tasks/csv_pool.py`.
 Every purchase selects an exact, previously untested row. Duplicate feature
 vectors, if present, retain separate row identities. Features are public;
 material names and the complete `y` column stay private. The isolated workspace

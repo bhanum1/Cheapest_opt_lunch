@@ -62,12 +62,13 @@ Feasibility rate is the fraction of 500 uniform points that satisfy every constr
 
 ### Pool
 
-A campaign can test each pool row at most once: up to 526 OPV devices or 1,000 MOF candidates. The published comparisons use budget 100 including initialization; `task_006_baseline/README.md` gives the OPV reproduction commands.
+A campaign can test each pool row at most once: up to 526 OPV devices, 1,000 MOF candidates or 1,300 fluid mixtures. The published comparisons use budget 100 including initialization; `task_006_baseline/README.md` gives the OPV reproduction commands.
 
 | Key | Folder | Source | D | Box | Tests | Baseline results @100 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `opv_pool` | `opv_pool_pce_d11` | The 526 OPV devices of `opv_pce` (Seifrid et al. 2024) as a fixed pool, measured −PCE (%) | 11 | [0, 1] | Each point maps to the nearest untested device, so a repeated point returns a different device; exact `f_opt` (best device). Pool-only baseline `pool_random` picks devices uniformly without replacement. | BOBYQA (0, one deterministic run); Sobol (mean 0.28, best device in 8/10 seeds); `pool_random` mean 1.87 |
 | `mof_pool` | `mof_pool_d193_n1000` | User-supplied task_061 CSV; minimize −raw y | 193 | Exact rows only | 1,000 public feature rows, 28 constant features; each row purchased once by anonymous index. Labels, material IDs and ranks private. | Supplied GP-BO and TuRBO traces, 10 seeds each; first 100 of 110 recorded calls. |
+| `fluid_mixtures` | `fluid_mixtures_d109_n1300` | sdagent lab campaign 11: measured μ, c_p, ρ of 1,300 mixtures (12 pure, 157 binary, 1,131 ternary) of 12 heat-transfer fluids; minimize log10 laminar pump work μ/(c_p·ρ)² | 109 | Exact rows only | Fraction-weighted RDKit 2D descriptors (rank 11: the composition simplex). The best row is a binary; the best pure fluid ranks 6th. Proprietary data in git-ignored `external/fluid_mixtures/`; exact `f_opt` (−15.998). | Not yet run. |
 
 MOF uses the exact supplied 1,000-row table; the archive's reference to 5,882
 rows is stale. Its confirmed agent budget is 100 including initialization,

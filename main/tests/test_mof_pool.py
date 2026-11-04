@@ -13,7 +13,7 @@ MAIN = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MAIN))
 
 from src.loop import campaign, results
-from src.tasks.mof_pool import MOFPoolTask
+from src.tasks.csv_pool import CSVPoolTask
 from scripts.run_campaign import optimizers_for_task, run_campaign
 
 
@@ -27,7 +27,7 @@ class MOFPoolIntegrity(unittest.TestCase):
                             'SECRET_C,1,7,9\nSECRET_D,2,7,4\n')
 
     def campaign(self, budget=4):
-        run = campaign.Campaign.prepare(MOFPoolTask(self.csv), budget, 2, self.root / 'run')
+        run = campaign.Campaign.prepare(CSVPoolTask(self.csv, 'mof_pool', maximize=True), budget, 2, self.root / 'run')
         return run
 
     def fixed(self, run, indices, n):
@@ -42,7 +42,7 @@ class MOFPoolIntegrity(unittest.TestCase):
         return run.run(agent)
 
     def test_exact_identity_and_tied_rank_conventions(self):
-        task = MOFPoolTask(self.csv)
+        task = CSVPoolTask(self.csv, 'mof_pool', maximize=True)
         self.assertEqual(task.evaluate_index(1).y, -9.)
         self.assertEqual(task.evaluate_index(0).y, -1.)
         with self.assertRaisesRegex(ValueError, 'already'):
@@ -73,7 +73,7 @@ class MOFPoolIntegrity(unittest.TestCase):
             self.assertNotIn(hidden, public)
 
     def test_baseline_dispatch_preserves_exact_rows_and_minimization(self):
-        factory = lambda: MOFPoolTask(self.csv)
+        factory = lambda: CSVPoolTask(self.csv, 'mof_pool', maximize=True)
         self.assertEqual(set(optimizers_for_task(factory())), {'gp_bo', 'turbo', 'pool_random'})
         with patch.dict('scripts.run_campaign.TASKS', {'synthetic': factory}):
             out = run_campaign('synthetic', 'pool_random', 0, 4, self.root / 'results')

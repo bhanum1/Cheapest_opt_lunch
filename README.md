@@ -50,7 +50,7 @@ codex login
 ```
 
 This is enough for the BBOB tasks (`sphere10`, `rosenbrock*`, `rastrigin10`,
-`step_ellipsoid10`, …) and the data-backed `opv_pce`, `opv_pool` and `mof_pool`.
+`step_ellipsoid10`, …) and the data-backed `opv_pce`, `opv_pool`, `mof_pool` and `fluid_mixtures`.
 
 ### Optional task backends
 
@@ -268,6 +268,8 @@ Figures that leave the repo follow [FIGURES.md](main/FIGURES.md). Their scripts
   baselines, agent runs and plots.
 - [MOF exact candidate pool (`mof_pool`)](main/data/mof_pool/README.md): data
   provenance, agent campaigns and pool-aware baselines.
+- [Lab fluid mixtures (`fluid_mixtures`)](main/data/fluid_mixtures/README.md): sdagent's
+  measured mixtures, RDKit descriptors and pump work.
 - [Tasks](main/TASKS.md): what each registered task tests and its baseline winners.
 - [Adding a task](main/ADDING_TASKS.md): registration, backends and the public contract.
 

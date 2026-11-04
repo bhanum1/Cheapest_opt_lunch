@@ -49,11 +49,12 @@ A new non-BBOB function subclasses `Task` (`src/tasks/base.py`) in a new `src/ta
 
 Exact public candidate pools additionally set `indexed_pool = True` and expose
 `candidates`, `n_candidates`, `validate_index(index)` (no side effects), and
-`evaluate_index(index)`. `mof_pool` is the reference implementation. The runner
-exports only the feature matrix as `candidates.npy`; the generic client exposes
-`h.candidates`, `h.available_indices`, and `h.evaluate_index(index)`. The private
-journal enforces distinct purchases and budget even when a client reconnects.
-The source table, material IDs, unobserved labels, and full-pool ranks stay private.
+`evaluate_index(index)`. A table with columns `id,x0,x1,...,y` needs no new
+code: register `CSVPoolTask(path, name, maximize)` (`src/tasks/csv_pool.py`),
+as `mof_pool` and `fluid_mixtures` do. The loop puts only the feature matrix in
+`space.json` `candidates`; optimizers propose candidate indices, and the runner
+rejects a repeated index. The source table, material IDs, unobserved labels,
+and full-pool ranks stay private.
 List label-bearing input files in `private_data_paths` for hashes and preflight
 denial checks. Exact-pool baseline dispatch uses pool-aware GPBO/TuRBO and uniform
 row selection; it never projects continuous proposals onto rows. See
